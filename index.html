@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#100b20">
+<title>IQ MASTER</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;min-height:100vh;padding:16px;
+ display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(circle at top,#45306e,#090713 70%);
+ color:white;font-family:Arial,sans-serif
+}
+.app{
+ width:100%;max-width:430px;padding:22px;
+ border-radius:27px;background:#191329;
+ border:1px solid #8063a1;
+ box-shadow:0 15px 55px #0009
+}
+.logo{text-align:center;font-size:45px}
+h1{text-align:center;color:#f0ce7d;letter-spacing:4px;margin:5px}
+.sub{text-align:center;color:#aa9bbb;font-size:11px;margin-bottom:22px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#302447;border:1px solid #59416e;border-radius:13px;padding:12px 3px;text-align:center}
+.stat small{display:block;color:#b6a8cb;margin-bottom:6px}
+.stat strong{font-size:18px;color:#f3d58c}
+.panel{display:none}
+#home{display:block}
+.question{background:linear-gradient(135deg,#39265c,#241b3c);border:1px solid #8061a7;border-radius:19px;padding:28px 10px;text-align:center;font-size:34px;font-weight:bold;margin:18px 0}
+button{border:1px solid #8061a7;border-radius:13px;background:linear-gradient(135deg,#563b83,#34234f);color:white;padding:16px 8px;font-size:18px;font-weight:bold;cursor:pointer}
+button:active{transform:scale(.97)}
+.mainbtn{width:100%;margin-top:18px;background:linear-gradient(90deg,#d4ad55,#f1d78c);color:#21152e;border:0}
+.info{text-align:center;color:#b9abc9;line-height:1.6}
+.level{text-align:center;color:#d6bdff;margin:20px 0 10px}
+.timer{height:7px;background:#493b58;border-radius:10px;overflow:hidden}
+#bar{height:100%;width:100%;background:#e2c16b;transition:width .3s}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+#message{text-align:center;min-height:25px;color:#e8cd89;margin-top:18px}
+.footer{text-align:center;color:#76698a;font-size:11px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="logo">👑</div>
+ <h1>IQ MASTER</h1>
+ <div class="sub">PREMIUM BRAIN CHALLENGE</div>
+
+ <div class="stats">
+  <div class="stat"><small>🏆 BALL</small><strong id="score">0</strong></div>
+  <div class="stat"><small>💎 TANGA</small><strong id="coins">0</strong></div>
+  <div class="stat"><small>❤️ JON</small><strong id="lives">3</strong></div>
+ </div>
+
+ <section id="home" class="panel">
+  <div class="question">🧠</div>
+  <h2 style="text-align:center;color:#e8ce91">Aqlingni sinab ko‘r!</h2>
+  <p class="info">100 ta bosqich. Cheksiz imkoniyat!</p>
+  <p class="info">🥇 Rekord: <b id="best">0</b></p>
+  <button class="mainbtn" onclick="startGame()">O‘YINNI BOSHLASH ▶</button>
+ </section>
+
+ <section id="game" class="panel">
+  <div class="level" id="level">1 / 100 BOSQICH</div>
+  <div class="question" id="question"></div>
+  <div class="timer"><div id="bar"></div></div>
+  <p class="info">⏱️ <span id="time">15</span> soniya</p>
+  <div class="answers" id="answers"></div>
+  <div id="message">Javobni tanlang!</div>
+ </section>
+
+ <section id="result" class="panel" style="text-align:center">
+  <div class="question" id="resultIcon">🏆</div>
+  <h2 id="resultTitle">Ajoyib!</h2>
+  <p class="info" id="resultText"></p>
+  <button class="mainbtn" onclick="startGame()">QAYTA O‘YNASH ↻</button>
+  <button style="width:100%;margin-top:10px" onclick="showHome()">BOSH MENYU</button>
+ </section>
+
+ <div class="footer">IQ MASTER © PREMIUM EDITION</div>
+</div>
+
+<script>
+let level=1,score=0,coins=0,lives=3;
+let correct=0,time=15,timer=null,locked=false;
+let best=Number(localStorage.getItem("iqbest")||0);
+
+const $=id=>document.getElementById(id);
+
+function update(){
+ $("score").textContent=score;
+ $("coins").textContent=coins;
+ $("lives").textContent="❤️".repeat(lives);
+ $("best").textContent=best;
+}
+
+function showPage(page){
+ ["home","game","result"].forEach(id=>{
+  $(id).style.display=id===page?"block":"none";
+ });
+}
+
+function showHome(){
+ clearInterval(timer);
+ showPage("home");
+ update();
+}
+
+function startGame(){
+ level=1;score=0;coins=0;lives=3;
+ update();
+ showPage("game");
+ newQuestion();
+}
+
+function makeQuestion(){
+ let a=Math.floor(Math.random()*10)+2+Math.floor(level/3);
+ let b=Math.floor(Math.random()*10)+1;
+ let type=Math.floor(Math.random()*3);
+ if(type===0)return {q:a+" + "+b+" = ?",ans:a+b};
+ if(type===1)return {q:(a+b)+" - "+b+" = ?",ans:a};
+ return {q:a+" × "+b+" = ?",ans:a*b};
+}
+
+function newQuestion(){
+ if(level>100){finish(true);return}
+ locked=false;time=15;
+ let q=makeQuestion();correct=q.ans;
+ $("question").textContent=q.q;
+ $("level").textContent=level+" / 100 BOSQICH";
+ $("message").textContent="To‘g‘ri javobni toping!";
+ $("time").textContent=time;
+ $("bar").style.width="100%";
+
+ let answers=new Set([correct]);
+ while(answers.size<4){
+  let n=correct+Math.floor(Math.random()*15)-7;
+  if(n>=0 && n!==correct)answers.add(n);
+ }
+ let box=$("answers");box.innerHTML="";
+ [...answers].sort(()=>Math.random()-.5).forEach(n=>{
+  let btn=document.createElement("button");
+  btn.textContent=n;
+  btn.onclick=()=>choose(n,btn);
+  box.appendChild(btn);
+ });
+
+ clearInterval(timer);
+ timer=setInterval(()=>{
+  time--;
+  $("time").textContent=time;
+  $("bar").style.width=(time/15*100)+"%";
+  if(time<=0)wrong("⏰ Vaqt tugadi!");
+ },1000);
+}
+
+function choose(n,btn){
+ if(locked)return;
+ if(n===correct){
+  locked=true;clearInterval(timer);
+  score+=10;coins+=5;
+  $("message").textContent="🎉 Barakalla! +10 ball";
+  btn.style.background="#287b50";
+  if(score>best){
+   best=score;
+   localStorage.setItem("iqbest",best);
+  }
+  update();
+  setTimeout(()=>{
+   level++;
+   newQuestion();
+  },800);
+ }else{
+  wrong("❌ Noto‘g‘ri javob!");
+ }
+}
+
+function wrong(message){
+ if(locked)return;
+ locked=true;clearInterval(timer);
+ lives--;
+ $("message").textContent=message;
+ update();
+ setTimeout(()=>{
+  if(lives<=0)finish(false);
+  else newQuestion();
+ },900);
+}
+
+function finish(won){
+ clearInterval(timer);
+ showPage("result");
+ $("resultIcon").textContent=won?"👑":"💔";
+ $("resultTitle").textContent=won?"SEN G‘OLIBSAN!":"O‘YIN TUGADI";
+ $("resultText").textContent=
+ "Ball: "+score+" | Tanga: "+coins+
+ " | Bosqich: "+Math.min(level,100)+
+ " | Rekord: "+best;
+}
+
+update();
+</script>
+</body>
+</html>
